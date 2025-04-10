@@ -27,31 +27,32 @@ public class RewardService {
 	/**
 	 * Calculates reward points for all customers based on their transaction history
 	 * within the last 3 months.
-	 *
-	 * Steps: 1. Retrieves all transactions from the repository. 2. Filters
-	 * transactions to include only those occurring in the last 3 months, starting
-	 * from the first day of the 3rd month ago up to the current date. 3. Groups the
-	 * filtered transactions by customer ID. 4. For each customer: - Calculates
-	 * reward points per transaction. - Aggregates points per month using an EnumMap
-	 * for Month. - Calculates total reward points. 5. Creates a list of
-	 * RewardResponse objects, each containing: - Customer ID - Monthly reward
-	 * breakdown - Total reward points
+	 * 
+	 * Step: 1. Filters transactions to include only those occurring in the last 3 months, starting from the first day of the 3rd month ago up to the current date. 
+	 * Step: 2. Groups the filtered transactions by customer ID. 
+	 * Step: 3. For each customer: 
+	 * - Calculates reward points per transaction. 
+	 * - Aggregates points per month using an TreeMap for Month. 
+	 * - Calculates total reward points. 
+	 * Step: 4. Creates a list of RewardResponse objects, each containing: 
+	 * - Customer ID 
+	 * - Monthly reward breakdown 
+	 * - Total reward points
 	 *
 	 * @return List of RewardResponse objects representing reward points per
 	 *         customer.
 	 */
 	public List<RewardResponse> calculateRewards() {
-		// only last 3 month pass to repo layer tran date >= this date 
-		List<Transaction> allTransactions = repository.findAll();
-		List<Transaction> recentTransactions = filterLastThreeMonthsTransactions(allTransactions);
-		Map<String, List<Transaction>> groupedByCustomer = groupTransactionsByCustomer(recentTransactions);
 
-		return groupedByCustomer.entrySet().stream().map(this::buildRewardResponse).toList();
-	}
+	    LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3).withDayOfMonth(1);
+	    List<Transaction> recentTransactions = repository.findAllFromLastThreeMonths(threeMonthsAgo);
 
-	private List<Transaction> filterLastThreeMonthsTransactions(List<Transaction> transactions) {
-		LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3).withDayOfMonth(1);
-		return transactions.stream().filter(txn -> !txn.getTransactionDate().isBefore(threeMonthsAgo)).toList();
+	    Map<String, List<Transaction>> groupedByCustomer = groupTransactionsByCustomer(recentTransactions);
+
+	    return groupedByCustomer.entrySet().stream()
+	            .sorted(Map.Entry.comparingByKey())
+	            .map(this::buildRewardResponse)
+	            .toList();
 	}
 
 	private Map<String, List<Transaction>> groupTransactionsByCustomer(List<Transaction> transactions) {
@@ -79,16 +80,20 @@ public class RewardService {
 
 	/**
 	 * Calculates reward points based on the transaction amount using the following
-	 * rules: - No points for amounts $50 or less. - 1 point for every dollar spent
-	 * over $50 up to $100. - 2 points for every dollar spent over $100.
+	 * rules: 
+	 * - No points for amounts $50 or less. 
+	 * - 1 point for every dollar spent over $50 up to $100. 
+	 * - 2 points for every dollar spent over $100.
 	 *
-	 * Examples: - $120 → (20 * 2) + 50 = 90 points - $80 → (80 - 50) = 30 points -
-	 * $45 → 0 points
+	 * Examples: 
+	 * - $120 → (20 * 2) + 50 = 90 points 
+	 * - $80 → (80 - 50) = 30 points
+	 * - $45 → 0 points
 	 *
 	 * @param amount The transaction amount
 	 * @return The calculated reward points
 	 */
-	private int calculatePoints(Double amount) { // round of need to be done 130.4 = 130 
+	public int calculatePoints(Double amount) { // round of need to be done 130.4 = 130 
 		int points = 0;
 		if (amount > 100) {
 			points += (int) ((amount - 100) * 2);
@@ -101,15 +106,19 @@ public class RewardService {
 
 	/**
 	 * Calculates reward details for a specific customer within a given date range.
-	 *
-	 * Steps: 1. Retrieves all transactions for the customer from the repository. 2.
-	 * If startDate or endDate is not provided, defaults to the last 3 months. 3.
-	 * Filters transactions to include only those within the specified date range.
-	 * 4. Calculates reward points for each transaction based on the amount: - 2
-	 * points per dollar over $100 - 1 point per dollar over $50 (up to $100) 5.
-	 * Groups points by month and calculates the total. 6. Builds a response
-	 * including: - Customer ID - Start and end date - Monthly reward breakdown
-	 * ("MONTH YYYY" format) - Total reward points - List of filtered transactions
+	 * 
+	 * Step: 1. If startDate or endDate is not provided, defaults to the last 3 months. 
+	 * Step: 2. Filters transactions to include only those within the specified date range.
+	 * Step: 3. Calculates reward points for each transaction based on the amount: 
+	 * - 2 points per dollar over $100 
+	 * - 1 point per dollar over $50 (up to $100) 
+	 * Step: 4. Groups points by month and calculates the total. 6. Builds a response
+	 * including: 
+	 * - Customer ID 
+	 * - Start and end date 
+	 * - Monthly reward breakdown ("MONTH YYYY" format) 
+	 * - Total reward points 
+	 * - List of filtered transactions
 	 *
 	 * @param customerId ID of the customer
 	 * @param startDate  Start of the reward calculation period (nullable)
@@ -139,11 +148,11 @@ public class RewardService {
 		}
 	}
 
-	// get it from the database for 3 month direclty
+
 	private Optional<List<Transaction>> getTransactionsForCustomer(String customerId) {
-		List<Transaction> transactions = repository.findAll().stream()
-				.filter(txn -> txn.getCustomerId().equals(customerId)).toList();
-		return Optional.ofNullable(transactions);
+	    LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3).withDayOfMonth(1);
+	    List<Transaction> transactions = repository.findByCustomerIdAndTransactionDateAfter(customerId, threeMonthsAgo);
+	    return Optional.ofNullable(transactions.isEmpty() ? null : transactions);
 	}
 
 	private record LocalDateRange(LocalDate start, LocalDate end) {

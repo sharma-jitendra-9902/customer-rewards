@@ -35,14 +35,11 @@ class RewardControllerTest {
 
 	@Test
 	void testGetAllCustomerRewards_WhenRewardsExist_ReturnsOk() {
-		// Arrange
 		List<RewardResponse> mockRewards = List.of(new RewardResponse(/* add fields as needed */));
 		when(rewardService.calculateRewards()).thenReturn(mockRewards);
 
-		// Act
 		ResponseEntity<ApiResponse<List<RewardResponse>>> responseEntity = rewardController.getAllCustomerRewards();
 
-		// Assert
 		assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
 		assertNotNull(responseEntity.getBody());
 		assertEquals(ClassUtil.SUCCESS, responseEntity.getBody().getStatus());
@@ -52,67 +49,56 @@ class RewardControllerTest {
 
 	@Test
 	void testGetAllCustomerRewards_WhenNoRewardsExist_ReturnsNotFound() {
-		// Arrange
 		when(rewardService.calculateRewards()).thenReturn(Collections.emptyList());
 
-		// Act
 		ResponseEntity<ApiResponse<List<RewardResponse>>> responseEntity = rewardController.getAllCustomerRewards();
 
-		// Assert
 		assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
 		assertNotNull(responseEntity.getBody());
 		assertEquals(ClassUtil.ERROR, responseEntity.getBody().getStatus());
 		assertEquals(ClassUtil.NO_RECORD_IN_DB, responseEntity.getBody().getMessage());
 		assertNull(responseEntity.getBody().getData());
 	}
-	
-	 @Test
-	    void testGetRewardsForCustomer_WhenRewardsExist_ReturnsOk() {
-	        // Arrange
-	        String customerId = "cust123";
-	        LocalDate startDate = LocalDate.of(2024, 1, 1);
-	        LocalDate endDate = LocalDate.of(2024, 3, 31);
 
-	        RewardDetailsResponse mockResponse = new RewardDetailsResponse();
-	        mockResponse.setMonthlyRewards(List.of(new MonthlyReward(/* fields here if needed */)));
+	@Test
+	void testGetRewardsForCustomer_WhenRewardsExist_ReturnsOk() {
+		String customerId = "cust123";
+		LocalDate startDate = LocalDate.of(2024, 1, 1);
+		LocalDate endDate = LocalDate.of(2024, 3, 31);
 
-	        when(rewardService.calculateRewardsForCustomer(customerId, startDate, endDate))
-	                .thenReturn(mockResponse);
+		RewardDetailsResponse mockResponse = new RewardDetailsResponse();
+		mockResponse.setMonthlyRewards(List.of(new MonthlyReward(/* fields here if needed */)));
 
-	        // Act
-	        ResponseEntity<ApiResponse<RewardDetailsResponse>> responseEntity =
-	                rewardController.getRewardsForCustomer(customerId, startDate, endDate);
+		when(rewardService.calculateRewardsForCustomer(customerId, startDate, endDate)).thenReturn(mockResponse);
 
-	        // Assert
-	        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-	        assertNotNull(responseEntity.getBody());
-	        assertEquals(ClassUtil.SUCCESS, responseEntity.getBody().getStatus());
-	        assertEquals(ClassUtil.CUSTOMER_DETAILS_FETCHED_SUCCESFULLY, responseEntity.getBody().getMessage());
-	        assertEquals(mockResponse, responseEntity.getBody().getData());
-	    }
+		ResponseEntity<ApiResponse<RewardDetailsResponse>> responseEntity = rewardController
+				.getRewardsForCustomer(customerId, startDate, endDate);
 
-	    @Test
-	    void testGetRewardsForCustomer_WhenNoRewardsExist_ReturnsNotFound() {
-	        // Arrange
-	        String customerId = "cust999";
-	        LocalDate startDate = null;
-	        LocalDate endDate = null;
+		assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+		assertNotNull(responseEntity.getBody());
+		assertEquals(ClassUtil.SUCCESS, responseEntity.getBody().getStatus());
+		assertEquals(ClassUtil.CUSTOMER_DETAILS_FETCHED_SUCCESFULLY, responseEntity.getBody().getMessage());
+		assertEquals(mockResponse, responseEntity.getBody().getData());
+	}
 
-	        RewardDetailsResponse emptyResponse = new RewardDetailsResponse();
-	        emptyResponse.setMonthlyRewards(Collections.emptyList());
+	@Test
+	void testGetRewardsForCustomer_WhenNoRewardsExist_ReturnsNotFound() {
+		String customerId = "cust999";
+		LocalDate startDate = null;
+		LocalDate endDate = null;
 
-	        when(rewardService.calculateRewardsForCustomer(customerId, null, null))
-	                .thenReturn(emptyResponse);
+		RewardDetailsResponse emptyResponse = new RewardDetailsResponse();
+		emptyResponse.setMonthlyRewards(Collections.emptyList());
 
-	        // Act
-	        ResponseEntity<ApiResponse<RewardDetailsResponse>> responseEntity =
-	                rewardController.getRewardsForCustomer(customerId, null, null);
+		when(rewardService.calculateRewardsForCustomer(customerId, null, null)).thenReturn(emptyResponse);
 
-	        // Assert
-	        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
-	        assertNotNull(responseEntity.getBody());
-	        assertEquals(ClassUtil.ERROR, responseEntity.getBody().getStatus());
-	        assertEquals(ClassUtil.CUSTOMER_NOT_FOUND_IN_DB, responseEntity.getBody().getMessage());
-	        assertNull(responseEntity.getBody().getData());
-	    }
+		ResponseEntity<ApiResponse<RewardDetailsResponse>> responseEntity = rewardController
+				.getRewardsForCustomer(customerId, null, null);
+
+		assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
+		assertNotNull(responseEntity.getBody());
+		assertEquals(ClassUtil.ERROR, responseEntity.getBody().getStatus());
+		assertEquals(ClassUtil.CUSTOMER_NOT_FOUND_IN_DB, responseEntity.getBody().getMessage());
+		assertNull(responseEntity.getBody().getData());
+	}
 }

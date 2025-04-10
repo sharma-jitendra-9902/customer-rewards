@@ -94,7 +94,7 @@ public class RewardController {
 	    }
 	}
 	
-	@PostMapping("/storeData")
+	@PostMapping("/store/customer/data")
     public ResponseEntity<Transaction> createTransaction(@RequestBody Transaction transaction) {
 		log.info(ClassUtil.LOG_PATTERN_REQUEST, String.valueOf(transaction));
         Transaction savedTransaction = transactionService.insertTransaction(transaction);
