@@ -47,9 +47,7 @@ public class RewardService {
 	 *         customer.
 	 */
 	public List<RewardResponse> calculateRewards() {
-
-		LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3).withDayOfMonth(1);
-		List<Transaction> recentTransactions = repository.findAllFromLastThreeMonths(threeMonthsAgo);
+		List<Transaction> recentTransactions = repository.findAllFromLastThreeMonths();
 
 		Map<String, List<Transaction>> groupedByCustomer = groupTransactionsByCustomer(recentTransactions);
 

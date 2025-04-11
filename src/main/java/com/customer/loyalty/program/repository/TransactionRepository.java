@@ -13,9 +13,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 	
-	@Query("SELECT t FROM Transaction t WHERE t.transactionDate >= :startDate")
-    List<Transaction> findAllFromLastThreeMonths(@Param("startDate") LocalDate startDate);
-
+	@Query(value = "SELECT * FROM transaction t WHERE t.transactionDate >= CURRENT_DATE - INTERVAL 3 MONTH AND t.amount >= 50", nativeQuery = true)
+	List<Transaction> findAllFromLastThreeMonths();
+	
 	@Query("SELECT t FROM Transaction t WHERE t.customerId = :customerId AND t.transactionDate >= :startDate")
 	List<Transaction> findByCustomerIdAndTransactionDateAfter(
 	        @Param("customerId") String customerId,

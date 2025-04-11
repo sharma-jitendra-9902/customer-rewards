@@ -97,7 +97,7 @@ class RewardServiceTest {
                 new Transaction(3L, "C001", 80.0, LocalDate.of(2025, 2, 10))
         );
 
-        when(repository.findAllFromLastThreeMonths(any(LocalDate.class)))
+        when(repository.findAllFromLastThreeMonths())
                 .thenReturn(mockTransactions);
 
         List<RewardResponse> result = rewardService.calculateRewards();

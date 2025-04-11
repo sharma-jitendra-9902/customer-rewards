@@ -32,11 +32,13 @@ Method	Endpoint	Description
 - Spring Boot
 - Spring RESTful API
 - Spring Security
+- Spring AOP
 - Maven
 - JUnit & Mockito
 - Lombok
 - SonarQube (Optional)
 - MYSQL (database)
+- Swagger: API Documentation
 
 ---
 
@@ -114,34 +116,20 @@ GET api/rewards
                 {
                     "month": "MARCH 2025",
                     "points": 0
-                },
-                {
-                    "month": "APRIL 2025",
-                    "points": 231
                 }
             ],
-            "totalPoints": 231
-        },
-        {
-            "customerId": "C004",
-            "monthlyRewards": [
-                {
-                    "month": "APRIL 2025",
-                    "points": 431
-                }
-            ],
-            "totalPoints": 431
+            "totalPoints": 0
         }
     ]
 }
 
 **Sample Request**
 
-GET api/customer/reward/1001?startDate=2025-01-01&endDate=2025-03-31
+GET /api/customer/reward/C001?startDate=2025-01-01&endDate=2025-03-31
 
 **Sample Response**
 
-{ 
+{
     "status": "SUCCESS",
     "message": "Customer details fetched successfully",
     "data": {
@@ -161,13 +149,13 @@ GET api/customer/reward/1001?startDate=2025-01-01&endDate=2025-03-31
         "totalPoints": 164,
         "transactions": [
             {
-                "id": 1,
+                "id": 2,
                 "customerId": "C001",
                 "amount": 120.0,
                 "transactionDate": "2025-01-10"
             },
             {
-                "id": 2,
+                "id": 3,
                 "customerId": "C001",
                 "amount": 75.0,
                 "transactionDate": "2025-01-20"
