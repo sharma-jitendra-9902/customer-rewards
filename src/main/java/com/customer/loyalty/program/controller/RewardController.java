@@ -23,10 +23,6 @@ import com.customer.loyalty.program.service.TransactionService;
 import com.customer.loyalty.program.utils.ClassUtil;
 import com.google.gson.Gson;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
@@ -43,10 +39,6 @@ public class RewardController {
 	}
 
 	@GetMapping("/rewards")
-	@Operation(summary = "Get last 3 month and total rewards for a all customer", description = "Retrieves monthly & total reward points for all customer")
-	@ApiResponses(value = {
-			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Rewards fetched successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.class))),
-			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Customer not found") })
 	public ResponseEntity<ApiResponse<List<RewardResponse>>> getAllCustomerRewards() {
 
 		log.info(ClassUtil.LOG_PATTERN_METHOD_NAME, "getAllCustomerRewards()");
@@ -67,10 +59,6 @@ public class RewardController {
 	}
 
 	@GetMapping("/customer/reward/{customerId}")
-	@Operation(summary = "Get rewards for a specific customer", description = "Retrieves total reward points for a customer with optional date range filter")
-	@ApiResponses(value = {
-			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Rewards fetched successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.class))),
-			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Customer not found") })
 	public ResponseEntity<ApiResponse<RewardDetailsResponse>> getRewardsForCustomer(@PathVariable String customerId,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
@@ -107,26 +95,12 @@ public class RewardController {
 	}
 
 	@GetMapping("/health")
-	@Operation(summary = "health api details", description = "health api details")
-	@ApiResponses(value = {
-			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "getting health api details successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.class))),
-			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request"),
-			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized Scenario"),
-			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal Server Error") })
-
 	public ResponseEntity<String> health() {
 		log.info(ClassUtil.LOG_PATTERN_REQUEST, "health endpoint");
 		return new ResponseEntity<>(new Gson().fromJson("Success", String.class), HttpStatus.OK);
 	}
 
 	@PostMapping(path = "/store/customer/data", consumes = "application/json", produces = "application/json")
-	@Operation(summary = "save customer details in db", description = "save customer details in db.")
-	@ApiResponses(value = {
-			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Created customer details successfully in db", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.class))),
-			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request"),
-			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized Scenario"),
-			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal Server Error") })
-
 	public ResponseEntity<Transaction> createTransaction(@RequestBody Transaction transaction) {
 		log.info(ClassUtil.LOG_PATTERN_REQUEST, String.valueOf(transaction));
 		Transaction savedTransaction = transactionService.insertTransaction(transaction);
