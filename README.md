@@ -7,11 +7,11 @@ A simple Spring Boot application to calculate customer reward points based on re
 ## 🔗 API Details
 
 Method	Endpoint	Description
-- GET     /health **health endpoint**
-- GET	    /rewards	**Get all customer rewards**
-- GET	    /customer/reward/{customerId}	**Get rewards for a specific customer**
-- GET	    /customer/reward/{customerId}?startDate=yyyy-MM-dd&endDate=yyyy-MM-dd	**Get rewards for a specific customer via filtering date range**
-- POST    /store/customer/data **store customer data**
+- GET     /api/health **health endpoint**
+- GET	  /api/rewards	**Get all customer rewards**
+- GET	  /api/customer/reward/{customerId}	**Get rewards for a specific customer**
+- GET	  /api/customer/reward/{customerId}?startDate=yyyy-MM-dd&endDate=yyyy-MM-dd	**Get rewards for a specific customer via filtering date range**
+- POST    /api/store/customer/data **store customer data**
 
 ---
 
@@ -65,8 +65,57 @@ mvn spring-boot:run
 - INSERT INTO transaction (id, customerId, amount, transactionDate) VALUES (7, 'C004', 290.5, '2024-04-10');
 
 ---
+**Sample Request**
 
-✅ Example Response
+GET api/customer/reward/1001?startDate=2025-01-01&endDate=2025-03-31
+
+**Sample Response**
+{ 
+    "status": "SUCCESS",
+    "message": "Customer details fetched successfully",
+    "data": {
+        "customerId": "C001",
+        "startDate": "2025-01-01",
+        "endDate": "2025-03-31",
+        "monthlyRewards": [
+            {
+                "month": "JANUARY 2025",
+                "points": 115
+            },
+            {
+                "month": "FEBRUARY 2025",
+                "points": 49
+            }
+        ],
+        "totalPoints": 164,
+        "transactions": [
+            {
+                "id": 1,
+                "customerId": "C001",
+                "amount": 120.0,
+                "transactionDate": "2025-01-10"
+            },
+            {
+                "id": 2,
+                "customerId": "C001",
+                "amount": 75.0,
+                "transactionDate": "2025-01-20"
+            },
+            {
+                "id": 4,
+                "customerId": "C001",
+                "amount": 99.0,
+                "transactionDate": "2025-02-25"
+            }
+        ]
+    }
+}
+
+**Sample Request**
+
+GET api/rewards
+
+**Sample Response**
 
 json
 
