@@ -84,9 +84,7 @@ class RewardControllerTest {
 	@Test
 	void testGetRewardsForCustomer_WhenNoRewardsExist_ReturnsNotFound() {
 		String customerId = "cust999";
-		LocalDate startDate = null;
-		LocalDate endDate = null;
-
+		
 		RewardDetailsResponse emptyResponse = new RewardDetailsResponse();
 		emptyResponse.setMonthlyRewards(Collections.emptyList());
 

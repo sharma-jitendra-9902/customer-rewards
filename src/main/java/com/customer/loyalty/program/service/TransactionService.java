@@ -5,7 +5,11 @@ import org.springframework.stereotype.Service;
 import com.customer.loyalty.program.entity.Transaction;
 import com.customer.loyalty.program.repository.TransactionRepository;
 
+
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
@@ -15,6 +19,7 @@ public class TransactionService {
     }
 
     public Transaction insertTransaction(Transaction transaction) {
+
         return transactionRepository.save(transaction);
     }
 }

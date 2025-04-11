@@ -7,6 +7,9 @@ import com.customer.loyalty.program.dto.RewardResponse;
 import com.customer.loyalty.program.entity.Transaction;
 import com.customer.loyalty.program.exception.RewardCalculationException;
 import com.customer.loyalty.program.repository.TransactionRepository;
+import com.customer.loyalty.program.utils.ClassUtil;
+
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -16,6 +19,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class RewardService {
 
 	private final TransactionRepository repository;
@@ -56,10 +60,13 @@ public class RewardService {
 	}
 
 	private Map<String, List<Transaction>> groupTransactionsByCustomer(List<Transaction> transactions) {
+		
 		return transactions.stream().collect(Collectors.groupingBy(Transaction::getCustomerId));
 	}
 
 	private RewardResponse buildRewardResponse(Map.Entry<String, List<Transaction>> entry) {
+		
+
 		String customerId = entry.getKey();
 		List<Transaction> customerTxns = entry.getValue();
 
@@ -94,6 +101,8 @@ public class RewardService {
 	 * @return The calculated reward points
 	 */
 	public int calculatePoints(Double amount) { // round of need to be done 130.4 = 130 
+		
+
 		int points = 0;
 		if (amount > 100) {
 			points += (int) ((amount - 100) * 2);
@@ -127,6 +136,8 @@ public class RewardService {
 	 */
 	public RewardDetailsResponse calculateRewardsForCustomer(String customerId, LocalDate startDate,
 			LocalDate endDate) {
+		
+
 		try {
 			Optional<List<Transaction>> customerTransactions = getTransactionsForCustomer(customerId);
 
@@ -144,13 +155,16 @@ public class RewardService {
 			return new RewardDetailsResponse(customerId, dateRange.start(), dateRange.end(), monthlyRewards,
 					totalPoints, filteredTransactions);
 		} catch (Exception e) {
+			log.error(ClassUtil.LOG_PATTERN_RESPONSE, e.getLocalizedMessage());
 			throw new RewardCalculationException("Error calculating rewards for customer: " + customerId, e);
 		}
 	}
 
 
 	private Optional<List<Transaction>> getTransactionsForCustomer(String customerId) {
-	    LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3).withDayOfMonth(1);
+		
+
+		LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3).withDayOfMonth(1);
 	    List<Transaction> transactions = repository.findByCustomerIdAndTransactionDateAfter(customerId, threeMonthsAgo);
 	    return Optional.ofNullable(transactions.isEmpty() ? null : transactions);
 	}
@@ -159,6 +173,8 @@ public class RewardService {
 	}
 
 	private LocalDateRange resolveDateRange(LocalDate startDate, LocalDate endDate) {
+		
+
 		if (startDate == null || endDate == null) {
 			endDate = LocalDate.now();
 			startDate = endDate.minusMonths(3).withDayOfMonth(1);
@@ -167,11 +183,15 @@ public class RewardService {
 	}
 
 	private List<Transaction> filterTransactionsByDate(List<Transaction> transactions, LocalDateRange range) {
+		
+
 		return transactions.stream().filter(txn -> !txn.getTransactionDate().isBefore(range.start())
 				&& !txn.getTransactionDate().isAfter(range.end())).toList();
 	}
 
 	private Map<YearMonth, Integer> calculateMonthlyPoints(List<Transaction> transactions) {
+		
+
 		Map<YearMonth, Integer> monthlyPoints = new TreeMap<>();
 		for (Transaction txn : transactions) {
 			int points = calculatePoints(txn.getAmount());
@@ -182,6 +202,8 @@ public class RewardService {
 	}
 
 	private List<MonthlyReward> buildMonthlyRewards(Map<YearMonth, Integer> monthlyPoints) {
+		
+
 		return monthlyPoints.entrySet().stream()
 				.map(entry -> new MonthlyReward(entry.getKey().getMonth().name() + " " + entry.getKey().getYear(),
 						entry.getValue()))

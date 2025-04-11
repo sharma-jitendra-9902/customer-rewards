@@ -1,8 +1,6 @@
 package com.customer.loyalty.program.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,18 +17,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-
-import com.customer.loyalty.program.dto.ApiResponse;
 import com.customer.loyalty.program.dto.MonthlyReward;
 import com.customer.loyalty.program.dto.RewardDetailsResponse;
 import com.customer.loyalty.program.dto.RewardResponse;
 import com.customer.loyalty.program.entity.Transaction;
 import com.customer.loyalty.program.exception.RewardCalculationException;
 import com.customer.loyalty.program.repository.TransactionRepository;
-import com.customer.loyalty.program.service.RewardService;
-import com.customer.loyalty.program.utils.ClassUtil;
 
 @ExtendWith(MockitoExtension.class)
 class RewardServiceTest {
@@ -47,8 +39,7 @@ class RewardServiceTest {
         String customerId = "C001";
         LocalDate today = LocalDate.now();
         LocalDate startDate = today.minusMonths(3).withDayOfMonth(1);
-        LocalDate endDate = today;
-
+        
         List<Transaction> mockTransactions = List.of(
             new Transaction(1L, customerId, 120.0, startDate.plusDays(5)), // earns 90
             new Transaction(2L, customerId, 70.0, startDate.plusDays(10))   // earns 20
@@ -99,9 +90,7 @@ class RewardServiceTest {
 
     @Test
     void testCalculateRewards_returnsSortedRewardsWithCorrectPoints() {
-        LocalDate now = LocalDate.of(2025, 4, 11); // fixed date for test
-        LocalDate threeMonthsAgo = now.minusMonths(3).withDayOfMonth(1);
-
+        
         List<Transaction> mockTransactions = List.of(
                 new Transaction(1L, "C002", 200.0, LocalDate.of(2025, 2, 5)),
                 new Transaction(2L, "C001", 120.0, LocalDate.of(2025, 1, 10)),
