@@ -1,5 +1,15 @@
 package com.customer.loyalty.program.service;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
 
 import com.customer.loyalty.program.dto.MonthlyReward;
 import com.customer.loyalty.program.dto.RewardDetailsResponse;
@@ -10,13 +20,6 @@ import com.customer.loyalty.program.repository.TransactionRepository;
 import com.customer.loyalty.program.utils.ClassUtil;
 
 import lombok.extern.slf4j.Slf4j;
-
-import java.time.LocalDate;
-import java.time.YearMonth;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
@@ -32,40 +35,34 @@ public class RewardService {
 	 * Calculates reward points for all customers based on their transaction history
 	 * within the last 3 months.
 	 * 
-	 * Step: 1. Filters transactions to include only those occurring in the last 3 months, starting from the first day of the 3rd month ago up to the current date. 
-	 * Step: 2. Groups the filtered transactions by customer ID. 
-	 * Step: 3. For each customer: 
-	 * - Calculates reward points per transaction. 
-	 * - Aggregates points per month using an TreeMap for Month. 
-	 * - Calculates total reward points. 
-	 * Step: 4. Creates a list of RewardResponse objects, each containing: 
-	 * - Customer ID 
-	 * - Monthly reward breakdown 
-	 * - Total reward points
+	 * Step: 1. Filters transactions to include only those occurring in the last 3
+	 * months, starting from the first day of the 3rd month ago up to the current
+	 * date. Step: 2. Groups the filtered transactions by customer ID. Step: 3. For
+	 * each customer: - Calculates reward points per transaction. - Aggregates
+	 * points per month using an TreeMap for Month. - Calculates total reward
+	 * points. Step: 4. Creates a list of RewardResponse objects, each containing: -
+	 * Customer ID - Monthly reward breakdown - Total reward points
 	 *
 	 * @return List of RewardResponse objects representing reward points per
 	 *         customer.
 	 */
 	public List<RewardResponse> calculateRewards() {
 
-	    LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3).withDayOfMonth(1);
-	    List<Transaction> recentTransactions = repository.findAllFromLastThreeMonths(threeMonthsAgo);
+		LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3).withDayOfMonth(1);
+		List<Transaction> recentTransactions = repository.findAllFromLastThreeMonths(threeMonthsAgo);
 
-	    Map<String, List<Transaction>> groupedByCustomer = groupTransactionsByCustomer(recentTransactions);
+		Map<String, List<Transaction>> groupedByCustomer = groupTransactionsByCustomer(recentTransactions);
 
-	    return groupedByCustomer.entrySet().stream()
-	            .sorted(Map.Entry.comparingByKey())
-	            .map(this::buildRewardResponse)
-	            .toList();
+		return groupedByCustomer.entrySet().stream().sorted(Map.Entry.comparingByKey()).map(this::buildRewardResponse)
+				.toList();
 	}
 
 	private Map<String, List<Transaction>> groupTransactionsByCustomer(List<Transaction> transactions) {
-		
+
 		return transactions.stream().collect(Collectors.groupingBy(Transaction::getCustomerId));
 	}
 
 	private RewardResponse buildRewardResponse(Map.Entry<String, List<Transaction>> entry) {
-		
 
 		String customerId = entry.getKey();
 		List<Transaction> customerTxns = entry.getValue();
@@ -86,48 +83,42 @@ public class RewardService {
 	}
 
 	/**
-	 * Calculates reward points based on the transaction amount using the following
-	 * rules: 
-	 * - No points for amounts $50 or less. 
-	 * - 1 point for every dollar spent over $50 up to $100. 
-	 * - 2 points for every dollar spent over $100.
+	 * Step 1 : Round down to the nearest whole number Calculates reward points
+	 * based on the transaction amount using the following rules: - No points for
+	 * amounts $50 or less. - 1 point for every dollar spent over $50 up to $100. -
+	 * 2 points for every dollar spent over $100.
 	 *
-	 * Examples: 
-	 * - $120 → (20 * 2) + 50 = 90 points 
-	 * - $80 → (80 - 50) = 30 points
-	 * - $45 → 0 points
+	 * Examples: - $120 → (20 * 2) + 50 = 90 points - $80 → (80 - 50) = 30 points -
+	 * $45 → 0 points
 	 *
 	 * @param amount The transaction amount
 	 * @return The calculated reward points
 	 */
-	public int calculatePoints(Double amount) { // round of need to be done 130.4 = 130 
-		
-
+	public int calculatePoints(Double amount) {
+		int roundedAmount = (int) Math.floor(amount);
 		int points = 0;
-		if (amount > 100) {
-			points += (int) ((amount - 100) * 2);
-			points += 50; // For the $50 between 50 and 100
-		} else if (amount > 50) {
-			points += (int) (amount - 50);
+
+		if (roundedAmount > 100) {
+			points += (roundedAmount - 100) * 2;
+			points += 50;
+		} else if (roundedAmount > 50) {
+			points += roundedAmount - 50;
 		}
+
 		return points;
 	}
 
 	/**
 	 * Calculates reward details for a specific customer within a given date range.
 	 * 
-	 * Step: 1. If startDate or endDate is not provided, defaults to the last 3 months. 
-	 * Step: 2. Filters transactions to include only those within the specified date range.
-	 * Step: 3. Calculates reward points for each transaction based on the amount: 
-	 * - 2 points per dollar over $100 
-	 * - 1 point per dollar over $50 (up to $100) 
-	 * Step: 4. Groups points by month and calculates the total. 6. Builds a response
-	 * including: 
-	 * - Customer ID 
-	 * - Start and end date 
-	 * - Monthly reward breakdown ("MONTH YYYY" format) 
-	 * - Total reward points 
-	 * - List of filtered transactions
+	 * Step: 1. If startDate or endDate is not provided, defaults to the last 3
+	 * months. Step: 2. Filters transactions to include only those within the
+	 * specified date range. Step: 3. Calculates reward points for each transaction
+	 * based on the amount: - 2 points per dollar over $100 - 1 point per dollar
+	 * over $50 (up to $100) Step: 4. Groups points by month and calculates the
+	 * total. 6. Builds a response including: - Customer ID - Start and end date -
+	 * Monthly reward breakdown ("MONTH YYYY" format) - Total reward points - List
+	 * of filtered transactions
 	 *
 	 * @param customerId ID of the customer
 	 * @param startDate  Start of the reward calculation period (nullable)
@@ -136,7 +127,6 @@ public class RewardService {
 	 */
 	public RewardDetailsResponse calculateRewardsForCustomer(String customerId, LocalDate startDate,
 			LocalDate endDate) {
-		
 
 		try {
 			Optional<List<Transaction>> customerTransactions = getTransactionsForCustomer(customerId);
@@ -160,20 +150,17 @@ public class RewardService {
 		}
 	}
 
-
 	private Optional<List<Transaction>> getTransactionsForCustomer(String customerId) {
-		
 
 		LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3).withDayOfMonth(1);
-	    List<Transaction> transactions = repository.findByCustomerIdAndTransactionDateAfter(customerId, threeMonthsAgo);
-	    return Optional.ofNullable(transactions.isEmpty() ? null : transactions);
+		List<Transaction> transactions = repository.findByCustomerIdAndTransactionDateAfter(customerId, threeMonthsAgo);
+		return Optional.ofNullable(transactions.isEmpty() ? null : transactions);
 	}
 
 	private record LocalDateRange(LocalDate start, LocalDate end) {
 	}
 
 	private LocalDateRange resolveDateRange(LocalDate startDate, LocalDate endDate) {
-		
 
 		if (startDate == null || endDate == null) {
 			endDate = LocalDate.now();
@@ -183,14 +170,12 @@ public class RewardService {
 	}
 
 	private List<Transaction> filterTransactionsByDate(List<Transaction> transactions, LocalDateRange range) {
-		
 
 		return transactions.stream().filter(txn -> !txn.getTransactionDate().isBefore(range.start())
 				&& !txn.getTransactionDate().isAfter(range.end())).toList();
 	}
 
 	private Map<YearMonth, Integer> calculateMonthlyPoints(List<Transaction> transactions) {
-		
 
 		Map<YearMonth, Integer> monthlyPoints = new TreeMap<>();
 		for (Transaction txn : transactions) {
@@ -202,7 +187,6 @@ public class RewardService {
 	}
 
 	private List<MonthlyReward> buildMonthlyRewards(Map<YearMonth, Integer> monthlyPoints) {
-		
 
 		return monthlyPoints.entrySet().stream()
 				.map(entry -> new MonthlyReward(entry.getKey().getMonth().name() + " " + entry.getKey().getYear(),
