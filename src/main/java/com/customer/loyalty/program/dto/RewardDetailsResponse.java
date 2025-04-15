@@ -3,8 +3,6 @@ package com.customer.loyalty.program.dto;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.customer.loyalty.program.entity.Transaction;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,6 +23,6 @@ public class RewardDetailsResponse {
     private LocalDate endDate;
     private List<MonthlyReward> monthlyRewards;
     private int totalPoints;
-    private List<Transaction> transactions; 
-    
+     
+    private List<TransactionDto> transactions; 
 }

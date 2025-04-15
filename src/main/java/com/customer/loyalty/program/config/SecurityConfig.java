@@ -11,13 +11,17 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		http.authorizeHttpRequests(auth -> auth.requestMatchers("/actuator/health", "/actuator/info").permitAll()
-				.requestMatchers("/actuator/**").hasRole("ADMIN").anyRequest().authenticated())
-				.httpBasic(Customizer.withDefaults())
-				.csrf(csrf -> csrf.disable());
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/actuator/**").permitAll()         // Public actuator access
+                .requestMatchers("/api/**").permitAll()              // Public API access
+                .anyRequest().authenticated()                        // All others require auth
+            )
+            .httpBasic(Customizer.withDefaults())                    // Enable basic auth
+            .csrf(csrf -> csrf.disable());                           // Disable CSRF for APIs
 
-		return http.build();
-	}
+        return http.build();
+    }
 }

@@ -14,7 +14,10 @@ import org.springframework.stereotype.Service;
 import com.customer.loyalty.program.dto.MonthlyReward;
 import com.customer.loyalty.program.dto.RewardDetailsResponse;
 import com.customer.loyalty.program.dto.RewardResponse;
+import com.customer.loyalty.program.dto.TransactionDto;
 import com.customer.loyalty.program.entity.Transaction;
+import com.customer.loyalty.program.exception.InvalidDateRangeException;
+import com.customer.loyalty.program.exception.InvalidTransactionException;
 import com.customer.loyalty.program.exception.RewardCalculationException;
 import com.customer.loyalty.program.repository.TransactionRepository;
 import com.customer.loyalty.program.utils.ClassUtil;
@@ -62,24 +65,56 @@ public class RewardService {
 
 	private RewardResponse buildRewardResponse(Map.Entry<String, List<Transaction>> entry) {
 
-		String customerId = entry.getKey();
-		List<Transaction> customerTxns = entry.getValue();
+	    // Extract customerId (the key of the map entry)
+	    String customerId = entry.getKey();
+	    
+	    // Get the list of transactions for the customer (the value of the map entry)
+	    List<Transaction> customerTxns = entry.getValue();
 
-		Map<YearMonth, Integer> monthlyPoints = new TreeMap<>();
-		int totalPoints = 0;
+	    // Create a map to store monthly points (key: YearMonth, value: total points for that month)
+	    Map<YearMonth, Integer> monthlyPoints = new TreeMap<>();
+	    
+	    // Initialize the totalPoints counter
+	    int totalPoints = 0;
 
-		for (Transaction txn : customerTxns) {
-			int points = calculatePoints(txn.getAmount());
-			YearMonth yearMonth = YearMonth.from(txn.getTransactionDate());
-			monthlyPoints.merge(yearMonth, points, Integer::sum);
-			totalPoints += points;
-		}
+	    // Loop through each transaction to calculate points
+	    for (Transaction txn : customerTxns) {
+	        
+	        // Validate the transaction (this could check for things like validity of the amount)
+	        validateTransaction(txn);
+	        
+	        // Calculate points for the transaction based on the amount (this can be a simple formula or logic)
+	        int points = calculatePoints(txn.getAmount());
+	        
+	        // Get the YearMonth (year and month) from the transaction date
+	        YearMonth yearMonth = YearMonth.from(txn.getTransactionDate());
+	        
+	        // Add the calculated points to the monthly points map (merging if the yearMonth already exists)
+	        monthlyPoints.merge(yearMonth, points, Integer::sum);
+	        
+	        // Add the points from this transaction to the total points counter
+	        totalPoints += points;
+	    }
 
-		List<MonthlyReward> monthlyRewards = buildMonthlyRewards(monthlyPoints);
+	    // Build a list of MonthlyReward objects from the monthlyPoints map (converts map entries into MonthlyReward objects)
+	    List<MonthlyReward> monthlyRewards = buildMonthlyRewards(monthlyPoints);
 
-		return new RewardResponse(customerId, monthlyRewards, totalPoints);
+	    // Convert the list of Transaction objects into TransactionDto objects
+	    // This step is important to map internal entities (Transaction) to the data format you want to expose in the API
+	    List<TransactionDto> transactionDtos = customerTxns.stream()
+	        // For each transaction, create a TransactionDto object with the necessary fields
+	        .map(txn -> TransactionDto.builder()
+	                .id(txn.getId())                // Set the ID of the transaction
+	                .customerId(txn.getCustomerId()) // Set the customer ID for the transaction
+	                .amount(txn.getAmount())         // Set the transaction amount
+	                .transactionDate(txn.getTransactionDate()) // Set the transaction date
+	                .build())                        // Build the TransactionDto object
+	        // Collect all the TransactionDto objects into a list
+	        .collect(Collectors.toList());
+
+	    // Return a new RewardResponse object with all the calculated data (monthly rewards, total points, and transactions)
+	    return new RewardResponse(customerId, monthlyRewards, totalPoints);
 	}
-
 	/**
 	 * Step 1 : Round down to the nearest whole number Calculates reward points
 	 * based on the transaction amount using the following rules: - No points for
@@ -93,17 +128,27 @@ public class RewardService {
 	 * @return The calculated reward points
 	 */
 	public int calculatePoints(Double amount) {
-		int roundedAmount = (int) Math.floor(amount);
-		int points = 0;
+	    if (amount == null) {
+	        throw new RewardCalculationException("Transaction amount cannot be null.");
+	    }
 
-		if (roundedAmount > 100) {
-			points += (roundedAmount - 100) * 2;
-			points += 50;
-		} else if (roundedAmount > 50) {
-			points += roundedAmount - 50;
-		}
+	    int roundedAmount = (int) Math.floor(amount);
+	    int points = 0;
 
-		return points;
+	    if (roundedAmount > 100) {
+	        points += (roundedAmount - 100) * 2;
+	        points += 50;
+	    } else if (roundedAmount > 50) {
+	        points += roundedAmount - 50;
+	    }
+
+	    return points;
+	}
+	
+	private void validateTransaction(Transaction txn) {
+	    if (txn.getTransactionDate() != null && txn.getTransactionDate().isAfter(LocalDate.now())) {
+	        throw new RewardCalculationException("Transaction date cannot be in the future: " + txn.getTransactionDate());
+	    }
 	}
 
 	/**
@@ -123,36 +168,60 @@ public class RewardService {
 	 * @param endDate    End of the reward calculation period (nullable)
 	 * @return RewardDetailsResponse with full reward summary
 	 */
-	public RewardDetailsResponse calculateRewardsForCustomer(String customerId, LocalDate startDate,
-			LocalDate endDate) {
+	public RewardDetailsResponse calculateRewardsForCustomer(String customerId, LocalDate startDate, LocalDate endDate) {
 
-		try {
-			Optional<List<Transaction>> customerTransactions = getTransactionsForCustomer(customerId);
+	    try {
+	        // Retrieve transactions
+	        Optional<List<Transaction>> customerTransactions = getTransactionsForCustomer(customerId, startDate, endDate);
 
-			LocalDateRange dateRange = resolveDateRange(startDate, endDate);
+	        // Resolve the date range
+	        LocalDateRange dateRange = resolveDateRange(startDate, endDate);
 
-			List<Transaction> filteredTransactions = filterTransactionsByDate(
-					customerTransactions.orElse(Collections.emptyList()), dateRange);
+	        // Filter transactions by date
+	        List<Transaction> filteredTransactions = filterTransactionsByDate(
+	                customerTransactions.orElse(Collections.emptyList()), dateRange);
 
-			Map<YearMonth, Integer> monthlyPoints = calculateMonthlyPoints(filteredTransactions);
+	        // Calculate monthly points
+	        Map<YearMonth, Integer> monthlyPoints = calculateMonthlyPoints(filteredTransactions);
 
-			List<MonthlyReward> monthlyRewards = buildMonthlyRewards(monthlyPoints);
+	        // Build monthly reward details
+	        List<MonthlyReward> monthlyRewards = buildMonthlyRewards(monthlyPoints);
 
-			int totalPoints = monthlyPoints.values().stream().mapToInt(Integer::intValue).sum();
+	        // Calculate total points
+	        int totalPoints = monthlyPoints.values().stream().mapToInt(Integer::intValue).sum();
 
-			return new RewardDetailsResponse(customerId, dateRange.start(), dateRange.end(), monthlyRewards,
-					totalPoints, filteredTransactions);
-		} catch (Exception e) {
-			log.error(ClassUtil.LOG_PATTERN_RESPONSE, e.getLocalizedMessage());
-			throw new RewardCalculationException("Error calculating rewards for customer: " + customerId, e);
-		}
+	        // Convert Transaction to TransactionDto
+	        List<TransactionDto> transactionDtos = filteredTransactions.stream()
+	                .map(txn -> TransactionDto.builder()
+	                        .id(txn.getId())
+	                        .customerId(txn.getCustomerId())
+	                        .amount(txn.getAmount())
+	                        .transactionDate(txn.getTransactionDate())
+	                        .build())
+	                .collect(Collectors.toList());
+
+	        // Return RewardDetailsResponse with TransactionDto list
+	        return new RewardDetailsResponse(customerId, dateRange.start(), dateRange.end(), monthlyRewards,
+	                totalPoints, transactionDtos);
+	    } catch (Exception e) {
+	        log.error(ClassUtil.LOG_PATTERN_RESPONSE, e.getLocalizedMessage());
+	        throw new RewardCalculationException("Error calculating rewards for customer: " + customerId, e);
+	    }
 	}
 
-	private Optional<List<Transaction>> getTransactionsForCustomer(String customerId) {
+	private Optional<List<Transaction>> getTransactionsForCustomer(String customerId, LocalDate startDate, LocalDate endDate) {
+		 // If startDate is null, default to 3 months ago from today
+	    if (startDate == null) {
+	        startDate = LocalDate.now().minusMonths(3);
+	    }
 
-		LocalDate threeMonthsAgo = LocalDate.now().minusMonths(3).withDayOfMonth(1);
-		List<Transaction> transactions = repository.findByCustomerIdAndTransactionDateAfter(customerId, threeMonthsAgo);
-		return Optional.ofNullable(transactions.isEmpty() ? null : transactions);
+	    // If endDate is null, and any future date
+	    if (endDate != null && endDate.isAfter(LocalDate.now())) {
+	        throw new InvalidDateRangeException("Transaction end date cannot be in the future.");
+	    }
+
+		List<Transaction> transactions = repository.findByCustomerIdAndTransactionDateRange(customerId, startDate, endDate);
+		return Optional.of(transactions).filter(list -> !list.isEmpty());
 	}
 
 	private record LocalDateRange(LocalDate start, LocalDate end) {
@@ -177,6 +246,7 @@ public class RewardService {
 
 		Map<YearMonth, Integer> monthlyPoints = new TreeMap<>();
 		for (Transaction txn : transactions) {
+			validateTransaction(txn);
 			int points = calculatePoints(txn.getAmount());
 			YearMonth yearMonth = YearMonth.from(txn.getTransactionDate());
 			monthlyPoints.merge(yearMonth, points, Integer::sum);
