@@ -45,7 +45,7 @@ class RewardServiceTest {
             new Transaction(2L, customerId, 70.0, startDate.plusDays(10))   // earns 20
         );
 
-        when(repository.findByCustomerIdAndTransactionDateAfter(eq(customerId), any(LocalDate.class)))
+        when(repository.findByCustomerIdAndTransactionDateRange(eq(customerId), any(LocalDate.class), any(LocalDate.class)))
             .thenReturn(mockTransactions);
 
         RewardDetailsResponse response = rewardService.calculateRewardsForCustomer(customerId, null, null);
@@ -64,7 +64,7 @@ class RewardServiceTest {
     void testCalculateRewardsForCustomer_noTransactions() {
         String customerId = "C999";
 
-        when(repository.findByCustomerIdAndTransactionDateAfter(eq(customerId), any(LocalDate.class)))
+        when(repository.findByCustomerIdAndTransactionDateRange(eq(customerId), any(LocalDate.class),any(LocalDate.class)))
             .thenReturn(Collections.emptyList());
 
         RewardDetailsResponse response = rewardService.calculateRewardsForCustomer(customerId, null, null);
@@ -79,7 +79,7 @@ class RewardServiceTest {
     void testCalculateRewardsForCustomer_throwsCustomException() {
         String customerId = "C001";
 
-        when(repository.findByCustomerIdAndTransactionDateAfter(anyString(), any()))
+        when(repository.findByCustomerIdAndTransactionDateRange(anyString(), any(), any()))
             .thenThrow(new RuntimeException("DB error"));
 
         RewardCalculationException ex = assertThrows(RewardCalculationException.class, () ->

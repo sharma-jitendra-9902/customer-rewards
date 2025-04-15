@@ -1,38 +1,26 @@
-# === Java ===
-*.class
-*.jar
-*.war
-*.ear
+# === Java build output ===
+/target/
+log/
 
-# === Maven ===
-target/
-!.mvn/wrapper/maven-wrapper.jar
-.mvn/wrapper/maven-wrapper.properties
-.mvn/wrapper/maven-wrapper.jar
+# === Eclipse / STS specific ===
+.classpath
+.project
+.factorypath
+.settings/
 
-# === Gradle ===
-.gradle/
-build/
-!gradle/wrapper/gradle-wrapper.jar
-
-# === IntelliJ IDEA ===
-.idea/
-*.iml
-*.ipr
-*.iws
-out/
-
-# === VS Code ===
-.vscode/
+# === OS-specific files ===
+.DS_Store
+Thumbs.db
 
 # === Logs ===
 *.log
 
-# === OS Files ===
-.DS_Store
-Thumbs.db
+# === Temp / backup files ===
+*.tmp
+*.bak
+*.swp
 
-# === Spring Boot specific ===
-application-local.properties
-application-prod.properties
-.env
+# === Maven wrapper files (keep these) ===
+# mvnw
+# mvnw.cmd
+# .mvn/
